@@ -1124,14 +1124,9 @@
                 <p style="margin: 4px 0 0 0; font-size: 0.95rem; color: var(--gray-900);"><strong>Tipo:</strong> <span id="summaryType"></span></p>
             </div>
             
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <button onclick="closeSuccessModal()" class="btn btn-secondary-custom" style="flex: 1; min-width: 140px;">
-                    <i class="fas fa-plus me-2"></i>Nuevo Registro
-                </button>
-                <button onclick="closeSuccessModalAndShowAdmin()" class="btn btn-green" style="flex: 1; min-width: 140px;">
-                    <i class="fas fa-list me-2"></i>Ver Registros
-                </button>
-            </div>
+            <button onclick="closeSuccessModal()" class="btn btn-primary-custom">
+                <i class="fas fa-plus me-2"></i>Nuevo Registro
+            </button>
         </div>
     </div>
 
@@ -1516,12 +1511,6 @@
         function closeSuccessModal() {
             document.getElementById('successModal').style.display = 'none';
             document.getElementById('eventDate').valueAsDate = new Date();
-        }
-
-        function closeSuccessModalAndShowAdmin() {
-            closeSuccessModal();
-            sessionStorage.setItem('adminAuthenticated', 'true');
-            showAdminPanel();
         }
 
         function closeErrorModal() {
