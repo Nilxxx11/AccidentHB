@@ -276,6 +276,17 @@
             box-shadow: var(--shadow-md);
         }
 
+        .btn-outline-danger {
+            color: #DE350B;
+            border-color: #DE350B;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: #DE350B;
+            border-color: #DE350B;
+            color: white;
+        }
+
         .table-container {
             background: var(--white);
             border-radius: 12px;
@@ -701,6 +712,30 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="deleteModal" class="auth-modal">
+        <div class="auth-modal-content" style="max-width: 420px; padding: 35px;">
+            <div style="width: 80px; height: 80px; background: #FFEBE6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="fas fa-trash-alt" style="font-size: 2.5rem; color: #DE350B;"></i>
+            </div>
+            <h3 style="font-weight: 700; color: var(--gray-900); margin-bottom: 10px;">¿Eliminar Registro?</h3>
+            <p style="color: var(--gray-600); margin-bottom: 10px;">¿Estás seguro de que deseas eliminar este registro?</p>
+            <div id="deleteEventInfo" style="background: var(--gray-100); border-radius: 8px; padding: 12px; margin-bottom: 20px; text-align: left;">
+                <p style="margin: 0; font-size: 0.9rem;"><strong>Trabajador:</strong> <span id="deleteWorker"></span></p>
+                <p style="margin: 4px 0 0 0; font-size: 0.9rem;"><strong>Fecha:</strong> <span id="deleteDate"></span></p>
+            </div>
+            <p style="color: #DE350B; font-size: 0.85rem; margin-bottom: 20px;"><i class="fas fa-exclamation-circle me-1"></i>Esta acción no se puede deshacer</p>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary-custom" style="flex: 1;">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button onclick="confirmDelete()" id="confirmDeleteBtn" class="btn" style="flex: 1; background: #DE350B; color: white;">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="main-container">
         <div id="register-section">
             <div class="page-header">
@@ -1051,6 +1086,43 @@
             });
         }
 
+        // Variables para eliminación
+        let eventToDelete = null;
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            eventToDelete = null;
+        }
+
+        function showDeleteModal(eventId, workerName, eventDate) {
+            document.getElementById('deleteWorker').textContent = workerName;
+            document.getElementById('deleteDate').textContent = eventDate;
+            eventToDelete = eventId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        async function confirmDelete() {
+            if (!eventToDelete) return;
+
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Eliminando...';
+            confirmBtn.disabled = true;
+
+            try {
+                await database.ref('events/' + eventToDelete).remove();
+                closeDeleteModal();
+                showToast('Registro eliminado exitosamente');
+                loadEvents();
+            } catch (error) {
+                console.error('Error al eliminar:', error);
+                showErrorModal('No se pudo eliminar el registro. Por favor, inténtelo de nuevo.');
+            } finally {
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            }
+        }
+
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -1117,6 +1189,9 @@
             }
             if (event.target == document.getElementById('errorModal')) {
                 closeErrorModal();
+            }
+            if (event.target == document.getElementById('deleteModal')) {
+                closeDeleteModal();
             }
         }
 
@@ -1203,13 +1278,15 @@
             try {
                 const templateParams = {
                     to_email: eventData.reporterEmail,
+                    reporter_name: eventData.reporterName,
                     worker_name: eventData.workerName,
                     event_date: eventData.eventDate,
                     event_time: eventData.eventTime,
                     event_type: eventData.eventType,
                     event_address: eventData.eventAddress,
-                    description: eventData.description,
-                    reporter_name: eventData.reporterName
+                    vehicle_plate: eventData.vehiclePlate,
+                    injuries: eventData.injuries,
+                    description: eventData.description
                 };
 
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
@@ -1408,10 +1485,10 @@
                         }
 
                         const evidenceBtn = event.imageUrl
-                            ? `<a href="${event.imageUrl}" target="_blank" class="btn btn-sm" style="background: var(--light-blue); color: var(--primary-blue);">
+                            ? `<a href="${event.imageUrl}" target="_blank" class="btn btn-sm" style="background: var(--light-blue); color: var(--primary-blue);" title="Ver evidencia">
                                 <i class="fas fa-image"></i>
                                </a>`
-                            : '<span class="text-muted">-</span>';
+                            : '';
 
                         row.innerHTML = `
                             <td><strong>${formattedDateTime}</strong></td>
@@ -1421,10 +1498,15 @@
                             <td>${event.injuries === 'Si' ? '<span style="color: #DE350B;"><i class="fas fa-exclamation-circle"></i> Sí</span>' : 'No'}</td>
                             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                             <td>
-                                ${evidenceBtn}
-                                <button class="btn btn-sm btn-outline-secondary" onclick="viewEventDetails('${event.id}')" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
+                                <div style="display: flex; gap: 6px; justify-content: center;">
+                                    ${evidenceBtn}
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewEventDetails('${event.id}')" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal('${event.id}', '${event.workerName}', '${event.eventDate}')" title="Eliminar registro">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </td>
                         `;
 
