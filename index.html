@@ -631,6 +631,76 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Modal de Confirmación de Registro Exitoso -->
+    <div id="successModal" class="auth-modal">
+        <div class="auth-modal-content" style="max-width: 480px; padding: 35px;">
+            <div style="width: 90px; height: 90px; background: var(--light-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+                <i class="fas fa-check" style="font-size: 3rem; color: var(--primary-green);"></i>
+            </div>
+            <h3 style="font-weight: 700; color: var(--gray-900); margin-bottom: 10px; font-size: 1.5rem;">¡Registro Exitoso!</h3>
+            <p style="color: var(--gray-600); margin-bottom: 20px; font-size: 1rem;">El evento ha sido registrado correctamente en el sistema.</p>
+            
+            <div id="emailStatus" style="background: var(--gray-100); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: none;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i id="emailStatusIcon" class="fas fa-envelope" style="color: var(--primary-blue); font-size: 1.2rem;"></i>
+                    <span id="emailStatusText" style="font-size: 0.9rem; color: var(--gray-900);"></span>
+                </div>
+            </div>
+            
+            <div style="background: var(--light-blue); border-radius: 10px; padding: 16px; margin-bottom: 25px; text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Datos del registro:</p>
+                <p style="margin: 0; font-size: 0.95rem; color: var(--gray-900);"><strong>Trabajador:</strong> <span id="summaryWorker"></span></p>
+                <p style="margin: 4px 0 0 0; font-size: 0.95rem; color: var(--gray-900);"><strong>Fecha:</strong> <span id="summaryDate"></span></p>
+                <p style="margin: 4px 0 0 0; font-size: 0.95rem; color: var(--gray-900);"><strong>Tipo:</strong> <span id="summaryType"></span></p>
+            </div>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button onclick="closeSuccessModal()" class="btn btn-secondary-custom" style="flex: 1; min-width: 140px;">
+                    <i class="fas fa-plus me-2"></i>Nuevo Registro
+                </button>
+                <button onclick="closeSuccessModalAndShowAdmin()" class="btn btn-green" style="flex: 1; min-width: 140px;">
+                    <i class="fas fa-list me-2"></i>Ver Registros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles del Evento -->
+    <div id="detailsModal" class="auth-modal">
+        <div class="auth-modal-content" style="max-width: 620px; max-height: 85vh; overflow-y: auto; padding: 30px; text-align: left;">
+            <span class="close" onclick="closeDetailsModal()" style="position: absolute; top: 15px; right: 20px;">&times;</span>
+            <div style="text-align: center; margin-bottom: 25px; padding-top: 10px;">
+                <div style="width: 60px; height: 60px; background: var(--light-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                    <i class="fas fa-clipboard-list" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                </div>
+                <h3 style="font-weight: 700; color: var(--gray-900); margin: 0;">Detalles del Evento</h3>
+            </div>
+            <div id="eventDetailsContent"></div>
+            <div style="display: flex; gap: 12px; margin-top: 25px;">
+                <button onclick="closeDetailsModal()" class="btn btn-secondary-custom" style="flex: 1;">
+                    <i class="fas fa-times me-2"></i>Cerrar
+                </button>
+                <a id="evidenceLink" href="#" target="_blank" class="btn btn-primary-custom" style="flex: 1; text-decoration: none; display: none;">
+                    <i class="fas fa-image me-2"></i>Ver Evidencia
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Error -->
+    <div id="errorModal" class="auth-modal">
+        <div class="auth-modal-content" style="max-width: 420px; padding: 35px;">
+            <div style="width: 80px; height: 80px; background: #FFEBE6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #DE350B;"></i>
+            </div>
+            <h3 style="font-weight: 700; color: var(--gray-900); margin-bottom: 10px;">Error</h3>
+            <p id="errorMessage" style="color: var(--gray-600); margin-bottom: 20px;"></p>
+            <button onclick="closeErrorModal()" class="btn btn-secondary-custom" style="width: 100%;">
+                <i class="fas fa-check me-2"></i>Entendido
+            </button>
+        </div>
+    </div>
+
     <div class="main-container">
         <div id="register-section">
             <div class="page-header">
@@ -920,6 +990,67 @@
             }, 4000);
         }
 
+        // Funciones de modales
+        function showSuccessModal(eventData, emailStatus) {
+            document.getElementById('summaryWorker').textContent = eventData.workerName;
+            document.getElementById('summaryDate').textContent = `${eventData.eventDate} a las ${eventData.eventTime}`;
+            document.getElementById('summaryType').textContent = eventData.eventType;
+            
+            const emailStatusDiv = document.getElementById('emailStatus');
+            const emailStatusText = document.getElementById('emailStatusText');
+            const emailStatusIcon = document.getElementById('emailStatusIcon');
+            
+            emailStatusDiv.style.display = 'block';
+            if (emailStatus === 'sent') {
+                emailStatusIcon.className = 'fas fa-check-circle';
+                emailStatusIcon.style.color = 'var(--primary-green)';
+                emailStatusText.textContent = `Correo de confirmación enviado a ${eventData.reporterEmail}`;
+            } else if (emailStatus === 'error') {
+                emailStatusIcon.className = 'fas fa-exclamation-circle';
+                emailStatusIcon.style.color = '#DE350B';
+                emailStatusText.textContent = 'No se pudo enviar la notificación por correo';
+            } else {
+                emailStatusIcon.className = 'fas fa-info-circle';
+                emailStatusIcon.style.color = 'var(--primary-blue)';
+                emailStatusText.textContent = 'Correo pendiente de configurar';
+            }
+            
+            document.getElementById('successModal').style.display = 'block';
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+            document.getElementById('eventDate').valueAsDate = new Date();
+        }
+
+        function closeSuccessModalAndShowAdmin() {
+            closeSuccessModal();
+            sessionStorage.setItem('adminAuthenticated', 'true');
+            showAdminPanel();
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        function showErrorModal(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').style.display = 'block';
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -977,6 +1108,15 @@
         window.onclick = function(event) {
             if (event.target == authModal) {
                 authModal.style.display = 'none';
+            }
+            if (event.target == document.getElementById('successModal')) {
+                closeSuccessModal();
+            }
+            if (event.target == document.getElementById('detailsModal')) {
+                closeDetailsModal();
+            }
+            if (event.target == document.getElementById('errorModal')) {
+                closeErrorModal();
             }
         }
 
@@ -1056,20 +1196,8 @@
         async function sendNotificationEmail(eventData) {
             // Verificar si EmailJS está configurado
             if (EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID') {
-                console.log('EmailJS no configurado. Simulación de envío de correo:');
-                console.log('Para activar el envío de correos:');
-                console.log('1. Regístrate en https://www.emailjs.com/');
-                console.log('2. Crea un servicio de email (Gmail, Outlook, etc.)');
-                console.log('3. Crea una plantilla de email con las variables:');
-                console.log('   - {{worker_name}}');
-                console.log('   - {{event_date}}');
-                console.log('   - {{event_time}}');
-                console.log('   - {{event_type}}');
-                console.log('   - {{event_address}}');
-                console.log('   - {{description}}');
-                console.log('4. Reemplaza las credenciales en el código');
-                showToast('Evento registrado (notificación por correo pendiente de configurar)', 'success');
-                return;
+                console.log('EmailJS no configurado. Simulación de envío de correo');
+                return 'pending';
             }
 
             try {
@@ -1085,10 +1213,10 @@
                 };
 
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
-                showToast('Correo de confirmación enviado exitosamente');
+                return 'sent';
             } catch (error) {
                 console.error('Error al enviar correo:', error);
-                showToast('Evento registrado (error al enviar notificación por correo)', 'error');
+                return 'error';
             }
         }
 
@@ -1102,45 +1230,96 @@
             submitBtn.disabled = true;
 
             try {
-                const eventData = {
-                    workerName: document.getElementById('workerName').value,
-                    eventDate: document.getElementById('eventDate').value,
-                    eventTime: document.getElementById('eventTime').value,
-                    eventAddress: document.getElementById('eventAddress').value,
-                    vehiclePlate: document.getElementById('vehiclePlate').value,
-                    vehiclePart: document.getElementById('vehiclePart').value,
-                    eventType: document.getElementById('eventType').value,
-                    otherVehicle: document.querySelector('input[name="otherVehicle"]:checked').value,
-                    otherVehiclePlate: document.getElementById('otherVehiclePlate').value,
-                    otherVehiclePart: document.getElementById('otherVehiclePart').value,
-                    clientService: document.querySelector('input[name="clientService"]:checked').value,
-                    clientCompany: document.getElementById('clientCompany').value,
-                    injuries: document.querySelector('input[name="injuries"]:checked').value,
-                    description: document.getElementById('description').value,
-                    reporterName: document.getElementById('reporterName').value,
-                    reporterEmail: document.getElementById('reporterEmail').value
-                };
+                // Validar campos obligatorios
+                const workerName = document.getElementById('workerName').value.trim();
+                const eventDate = document.getElementById('eventDate').value;
+                const eventTime = document.getElementById('eventTime').value;
+                const eventAddress = document.getElementById('eventAddress').value.trim();
+                const vehiclePlate = document.getElementById('vehiclePlate').value.trim();
+                const vehiclePart = document.getElementById('vehiclePart').value.trim();
+                const eventType = document.getElementById('eventType').value;
+                const otherVehicle = document.querySelector('input[name="otherVehicle"]:checked').value;
+                const clientService = document.querySelector('input[name="clientService"]:checked').value;
+                const injuries = document.querySelector('input[name="injuries"]:checked').value;
+                const description = document.getElementById('description').value.trim();
+                const reporterName = document.getElementById('reporterName').value.trim();
+                const reporterEmail = document.getElementById('reporterEmail').value.trim();
 
                 // Validaciones
-                if (eventData.otherVehicle === 'Si' && (!eventData.otherVehiclePlate || !eventData.otherVehiclePart)) {
-                    showToast('Complete los datos del otro vehículo', 'error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    return;
+                if (!workerName) {
+                    throw new Error('Por favor, ingrese el nombre del trabajador.');
+                }
+                if (!eventDate) {
+                    throw new Error('Por favor, seleccione la fecha del evento.');
+                }
+                if (!eventTime) {
+                    throw new Error('Por favor, seleccione la hora del evento.');
+                }
+                if (!eventAddress) {
+                    throw new Error('Por favor, ingrese la dirección del evento.');
+                }
+                if (!vehiclePlate) {
+                    throw new Error('Por favor, ingrese la placa del vehículo.');
+                }
+                if (!vehiclePart) {
+                    throw new Error('Por favor, ingrese la parte del vehículo afectada.');
+                }
+                if (!eventType) {
+                    throw new Error('Por favor, seleccione el tipo de evento.');
+                }
+                if (!description) {
+                    throw new Error('Por favor, ingrese una descripción del evento.');
+                }
+                if (!reporterName) {
+                    throw new Error('Por favor, ingrese el nombre de quien reporta.');
+                }
+                if (!reporterEmail) {
+                    throw new Error('Por favor, ingrese el correo electrónico.');
+                }
+                if (!isValidEmail(reporterEmail)) {
+                    throw new Error('Por favor, ingrese un correo electrónico válido.');
                 }
 
-                if (eventData.clientService === 'Si' && !eventData.clientCompany) {
-                    showToast('Especifique la empresa cliente', 'error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    return;
+                const otherVehiclePlate = document.getElementById('otherVehiclePlate').value.trim();
+                const otherVehiclePart = document.getElementById('otherVehiclePart').value.trim();
+                const clientCompany = document.getElementById('clientCompany').value.trim();
+
+                if (otherVehicle === 'Si' && (!otherVehiclePlate || !otherVehiclePart)) {
+                    throw new Error('Por favor, complete los datos del otro vehículo involucrado.');
                 }
+
+                if (clientService === 'Si' && !clientCompany) {
+                    throw new Error('Por favor, especifique la empresa cliente.');
+                }
+
+                const eventData = {
+                    workerName,
+                    eventDate,
+                    eventTime,
+                    eventAddress,
+                    vehiclePlate,
+                    vehiclePart,
+                    eventType,
+                    otherVehicle,
+                    otherVehiclePlate,
+                    otherVehiclePart,
+                    clientService,
+                    clientCompany,
+                    injuries,
+                    description,
+                    reporterName,
+                    reporterEmail
+                };
 
                 // Subir imagen
                 const file = evidenceInput.files[0];
                 let imageUrl = '';
                 if (file) {
-                    imageUrl = await uploadImageToImgBB(file);
+                    try {
+                        imageUrl = await uploadImageToImgBB(file);
+                    } catch (imgError) {
+                        console.warn('No se pudo subir la imagen:', imgError);
+                    }
                 }
 
                 // Guardar en Firebase
@@ -1153,8 +1332,14 @@
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
 
-                // Enviar notificación por correo
-                await sendNotificationEmail(eventData);
+                // Enviar notificación por correo (no bloquea el proceso)
+                let emailStatus = 'pending';
+                try {
+                    emailStatus = await sendNotificationEmail(eventData);
+                } catch (emailError) {
+                    console.warn('Error en el envío de correo:', emailError);
+                    emailStatus = 'error';
+                }
 
                 // Resetear formulario
                 eventForm.reset();
@@ -1162,21 +1347,28 @@
                 otherVehicleFields.style.display = 'none';
                 clientServiceFields.style.display = 'none';
 
-                showToast('¡Evento registrado exitosamente!');
+                // Mostrar modal de éxito
+                showSuccessModal(eventData, emailStatus);
 
             } catch (error) {
                 console.error('Error al registrar:', error);
-                showToast('Error al registrar el evento', 'error');
+                showErrorModal(error.message || 'Ocurrió un error al registrar el evento. Por favor, inténtelo de nuevo.');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
 
+        // Validar formato de email
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
         // Cargar eventos
         async function loadEvents() {
             loading.style.display = 'block';
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando...</td></tr>';
 
             try {
                 const snapshot = await database.ref('events').once('value');
@@ -1191,6 +1383,7 @@
 
                     eventCount = eventsArray.length;
                     totalRecordsSpan.textContent = eventCount;
+                    tableBody.innerHTML = '';
 
                     eventsArray.forEach(event => {
                         const row = document.createElement('tr');
@@ -1240,11 +1433,12 @@
                 } else {
                     eventCount = 0;
                     totalRecordsSpan.textContent = '0';
-                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><i class="fas fa-inbox me-2"></i>No hay registros de eventos</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div style="padding: 30px;"><i class="fas fa-inbox" style="font-size: 3rem; color: var(--gray-200); margin-bottom: 15px;"></i><p style="margin: 0; color: var(--gray-600);">No hay registros de eventos</p></div></td></tr>';
                 }
             } catch (error) {
                 console.error('Error al cargar eventos:', error);
-                tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error al cargar los registros</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div style="padding: 20px; color: #DE350B;"><i class="fas fa-exclamation-triangle me-2"></i>Error al cargar los registros. Verifique su conexión.</div></td></tr>';
+                showErrorModal('No se pudieron cargar los registros. Por favor, verifique su conexión a internet e inténtelo de nuevo.');
             } finally {
                 loading.style.display = 'none';
             }
@@ -1252,12 +1446,95 @@
 
         // Ver detalles del evento
         function viewEventDetails(eventId) {
-            database.ref('events/' + eventId).once('value').then(snapshot => {
-                const event = snapshot.val();
-                if (event) {
-                    alert(`Detalles del Evento:\n\nTrabajador: ${event.workerName}\nFecha: ${event.eventDate}\nHora: ${event.eventTime}\nDirección: ${event.eventAddress}\nTipo: ${event.eventType}\nPlaca: ${event.vehiclePlate}\nParte afectada: ${event.vehiclePart}\nOtro vehículo: ${event.otherVehicle}\nHeridos: ${event.injuries}\nDescripción: ${event.description}\nReportado por: ${event.reporterName}`);
-                }
-            });
+            database.ref('events/' + eventId).once('value')
+                .then(snapshot => {
+                    const event = snapshot.val();
+                    if (event) {
+                        const detailsContent = document.getElementById('eventDetailsContent');
+                        const evidenceLink = document.getElementById('evidenceLink');
+                        
+                        const statusMap = {
+                            'pending': { class: 'status-pending', text: 'Pendiente' },
+                            'verified': { class: 'status-verified', text: 'Verificado' },
+                            'rejected': { class: 'status-rejected', text: 'Rechazado' }
+                        };
+                        const status = statusMap[event.status] || statusMap['pending'];
+
+                        detailsContent.innerHTML = `
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Trabajador</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.workerName}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Fecha y Hora</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${formatDate(event.eventDate)} - ${event.eventTime}</p>
+                                </div>
+                            </div>
+                            <div class="detail-item" style="margin-top: 15px;">
+                                <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Dirección</label>
+                                <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.eventAddress}</p>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Tipo de Evento</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.eventType}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Vehículo</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.vehiclePlate} - ${event.vehiclePart}</p>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Otro Vehículo</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.otherVehicle === 'Si' ? event.otherVehiclePlate + ' - ' + event.otherVehiclePart : 'N/A'}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Heridos</label>
+                                    <p style="margin: 4px 0 0 0; color: ${event.injuries === 'Si' ? '#DE350B' : 'var(--primary-green)'}; font-weight: 600;">${event.injuries}</p>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Servicio a Cliente</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.clientService}${event.clientCompany ? ' - ' + event.clientCompany : ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Estado</label>
+                                    <p style="margin: 4px 0 0 0;"><span class="status-badge ${status.class}">${status.text}</span></p>
+                                </div>
+                            </div>
+                            <div class="detail-item" style="margin-top: 15px;">
+                                <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Descripción</label>
+                                <p style="margin: 4px 0 0 0; color: var(--gray-900); background: var(--gray-100); padding: 12px; border-radius: 8px;">${event.description}</p>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Reportado por</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.reporterName}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label style="font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase; font-weight: 600;">Correo</label>
+                                    <p style="margin: 4px 0 0 0; color: var(--gray-900);">${event.reporterEmail}</p>
+                                </div>
+                            </div>
+                        `;
+
+                        if (event.imageUrl) {
+                            evidenceLink.href = event.imageUrl;
+                            evidenceLink.style.display = 'block';
+                        } else {
+                            evidenceLink.style.display = 'none';
+                        }
+
+                        document.getElementById('detailsModal').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar detalles:', error);
+                    showErrorModal('No se pudieron cargar los detalles del evento.');
+                });
         }
 
         // Exportar a Excel
@@ -1268,14 +1545,16 @@
             }
 
             loading.style.display = 'block';
+            exportBtn.disabled = true;
 
             try {
                 const snapshot = await database.ref('events').once('value');
                 const events = snapshot.val();
 
                 if (!events) {
-                    showToast('No hay datos para exportar', 'error');
+                    showErrorModal('No hay datos para exportar. Primero registre al menos un evento.');
                     loading.style.display = 'none';
+                    exportBtn.disabled = false;
                     return;
                 }
 
@@ -1304,13 +1583,14 @@
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'Eventos');
                 XLSX.writeFile(workbook, `registros_eventos_${new Date().toISOString().slice(0,10)}.xlsx`);
-                showToast('Archivo Excel exportado exitosamente');
+                showToast(`Se exportaron ${eventsArray.length} registros exitosamente`);
 
             } catch (error) {
                 console.error('Error al exportar:', error);
-                showToast('Error al exportar los datos', 'error');
+                showErrorModal('Ocurrió un error al exportar los datos. Por favor, inténtelo de nuevo.');
             } finally {
                 loading.style.display = 'none';
+                exportBtn.disabled = false;
             }
         });
 
